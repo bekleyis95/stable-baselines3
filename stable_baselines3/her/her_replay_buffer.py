@@ -95,6 +95,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self.ep_start = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self.ep_length = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
+        self.add_previous_demos("/home/deniz.seven/Desktop/Thesis_Documents/replay_buffer/replay_buffer.pkl")
 
     def __getstate__(self) -> Dict[str, Any]:
         """
@@ -118,6 +119,21 @@ class HerReplayBuffer(DictReplayBuffer):
         self.__dict__.update(state)
         assert "env" not in state
         self.env = None
+
+    def add_previous_demos(self, file_path):
+        import pickle
+        with open(file_path, 'rb') as f:
+            replay_buffer = pickle.load(f)
+        
+        for ob, next_ob in zip(replay_buffer.observations,replay_buffer.next_observations):
+            print(next_ob)
+            print(ob)
+            # print(replay_buffer.actions[i]) 
+            # print(replay_buffer.rewards[i]) 
+            # print(replay_buffer.dones[i])
+        print(len(replay_buffer.rewards))
+        input()
+        return replay_buffer
 
     def set_env(self, env: VecEnv) -> None:
         """

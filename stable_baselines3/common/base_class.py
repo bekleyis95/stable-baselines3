@@ -156,6 +156,8 @@ class BaseAlgorithm(ABC):
         self._stats_window_size = stats_window_size
         self.ep_info_buffer = None  # type: Optional[deque]
         self.ep_success_buffer = None  # type: Optional[deque]
+        self.fail_reasons = {}
+        
         # For logging (and TD3 delayed updates)
         self._n_updates = 0  # type: int
         # Whether the user passed a custom logger or not
@@ -453,6 +455,11 @@ class BaseAlgorithm(ABC):
         for idx, info in enumerate(infos):
             maybe_ep_info = info.get("episode")
             maybe_is_success = info.get("is_success")
+            if info.get("fail_reason") is not None:
+                if self.fail_reasons.get(info["fail_reason"]) is None:
+                    self.fail_reasons[info["fail_reason"]] = 1
+                else:
+                    self.fail_reasons[info["fail_reason"]] += 1
             if maybe_ep_info is not None:
                 self.ep_info_buffer.extend([maybe_ep_info])
             if maybe_is_success is not None and dones[idx]:

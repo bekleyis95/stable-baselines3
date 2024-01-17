@@ -135,7 +135,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.replay_buffer_class = replay_buffer_class
         self.replay_buffer_kwargs = replay_buffer_kwargs or {}
         self._episode_storage = None
-
+        # self.load_replay_buffer("/home/deniz.seven/Desktop/Thesis_Documents/replay_buffer/replay_buffer.pkl")
         # Save train freq parameter, will be converted later to TrainFreq object
         self.train_freq = train_freq
 
@@ -231,6 +231,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             (and truncate it).
             If set to ``False``, we assume that we continue the same trajectory (same episode).
         """
+        print("=================================")
+        print("NIGGA IM LOADING THIS SHIT")
+        print("=================================")
         self.replay_buffer = load_from_pkl(path, self.verbose)
         assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
 
@@ -396,12 +399,17 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
         fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
         self.logger.record("time/episodes", self._episode_num, exclude="tensorboard")
+        # if len(self.ep_info_buffer) > 0:
+            # print(self.ep_info_buffer)
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
             self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
             self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
         self.logger.record("time/fps", fps)
         self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
         self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
+        for key, value in self.fail_reasons.items():
+            self.logger.record(f"fails/{key}", value)
+            self.logger.record(f"fail_percents/{key}", value / ( 1 if int(self._episode_num) == 0 else self._episode_num))
         if self.use_sde:
             self.logger.record("train/std", (self.actor.get_std()).mean().item())
 

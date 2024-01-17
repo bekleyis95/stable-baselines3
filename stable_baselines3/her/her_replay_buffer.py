@@ -58,6 +58,7 @@ class HerReplayBuffer(DictReplayBuffer):
         n_sampled_goal: int = 4,
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         copy_info_dict: bool = False,
+        replay_buffer_path: Optional[str] = None
     ):
         super().__init__(
             buffer_size,
@@ -95,7 +96,11 @@ class HerReplayBuffer(DictReplayBuffer):
         self.ep_start = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self.ep_length = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
-        self.add_previous_demos("/home/deniz.seven/Desktop/Thesis_Documents/replay_buffer/replay_buffer.pkl")
+        if replay_buffer_path:
+            try:
+                self.add_previous_demos(replay_buffer_path)
+            except Exception:
+                print("Could not load the replay buffer")
 
     def __getstate__(self) -> Dict[str, Any]:
         """
@@ -125,14 +130,23 @@ class HerReplayBuffer(DictReplayBuffer):
         with open(file_path, 'rb') as f:
             replay_buffer = pickle.load(f)
         
-        for ob, next_ob in zip(replay_buffer.observations,replay_buffer.next_observations):
-            print(next_ob)
-            print(ob)
-            # print(replay_buffer.actions[i]) 
-            # print(replay_buffer.rewards[i]) 
-            # print(replay_buffer.dones[i])
-        print(len(replay_buffer.rewards))
-        input()
+        print(f"pos before addition {self.pos}")
+        entry_observations = {}
+        entry_next_observations = {}
+        for i in range(replay_buffer.pos):
+            if replay_buffer.dones[i]:
+                replay_buffer.infos[i]
+            entry_observations["observation"] = replay_buffer.observations["observation"][i, 0, :]
+            entry_observations["achieved_goal"] = replay_buffer.observations["achieved_goal"][i, 0, :]
+            entry_observations["desired_goal"] = replay_buffer.observations["desired_goal"][i, 0, :]
+
+            entry_next_observations["observation"] = replay_buffer.next_observations["observation"][i, 0, :]
+            entry_next_observations["achieved_goal"] = replay_buffer.next_observations["achieved_goal"][i, 0, :]
+            entry_next_observations["desired_goal"] = replay_buffer.next_observations["desired_goal"][i, 0, :]
+
+            self.add(entry_observations, entry_next_observations, replay_buffer.actions[i], replay_buffer.rewards[i], replay_buffer.dones[i], replay_buffer.infos[i])
+        print(f"pos after addition {self.pos}")
+
         return replay_buffer
 
     def set_env(self, env: VecEnv) -> None:

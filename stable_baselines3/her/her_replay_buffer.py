@@ -96,11 +96,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self.ep_start = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self.ep_length = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
-        if replay_buffer_path:
-            try:
-                self.add_previous_demos(replay_buffer_path)
-            except Exception:
-                print("Could not load the replay buffer")
+        self.replay_buffer_path = replay_buffer_path
 
     def __getstate__(self) -> Dict[str, Any]:
         """
@@ -125,7 +121,11 @@ class HerReplayBuffer(DictReplayBuffer):
         assert "env" not in state
         self.env = None
 
-    def add_previous_demos(self, file_path):
+    def add_previous_demos(self):
+        if self.replay_buffer_path is None:
+            return
+        file_path = self.replay_buffer_path
+
         import pickle
         with open(file_path, 'rb') as f:
             replay_buffer = pickle.load(f)
@@ -133,6 +133,7 @@ class HerReplayBuffer(DictReplayBuffer):
         print(f"pos before addition {self.pos}")
         entry_observations = {}
         entry_next_observations = {}
+
         for i in range(replay_buffer.pos):
             if replay_buffer.dones[i]:
                 replay_buffer.infos[i]
@@ -146,8 +147,8 @@ class HerReplayBuffer(DictReplayBuffer):
 
             self.add(entry_observations, entry_next_observations, replay_buffer.actions[i], replay_buffer.rewards[i], replay_buffer.dones[i], replay_buffer.infos[i])
         print(f"pos after addition {self.pos}")
-
-        return replay_buffer
+        
+        self.replay_buffer_path = None
 
     def set_env(self, env: VecEnv) -> None:
         """

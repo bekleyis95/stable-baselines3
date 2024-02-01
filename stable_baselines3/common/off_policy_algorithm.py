@@ -232,7 +232,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             If set to ``False``, we assume that we continue the same trajectory (same episode).
         """
         print("=================================")
-        print("NIGGA IM LOADING THIS SHIT")
+        print("LOADING THE REPLAY BUFFER")
         print("=================================")
         self.replay_buffer = load_from_pkl(path, self.verbose)
         assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
@@ -326,6 +326,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 break
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
+
+                if isinstance(self.replay_buffer, HerReplayBuffer) and self.replay_buffer.replay_buffer_path is not None:
+                    print("DannyB: initializing the previous demos")
+                    self.replay_buffer.add_previous_demos()
+                     
                 # If no `gradient_steps` is specified,
                 # do as many gradients steps as steps performed during the rollout
                 gradient_steps = self.gradient_steps if self.gradient_steps >= 0 else rollout.episode_timesteps
